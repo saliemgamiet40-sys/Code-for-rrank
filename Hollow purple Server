@@ -1,0 +1,75 @@
+local remote = game.ReplicatedStorage:WaitForChild("Remotes").Gojo.Event
+local RemoteF = game.ReplicatedStorage:WaitForChild("Remotes").Gojo.Function
+local DB = {}
+
+remote.OnServerEvent:Connect(function(Plr, order)
+	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+		if player ~= Plr then
+			remote:FireClient(player, order, Plr.Character)
+		end
+	end
+
+	if order == "Attack" then
+
+	elseif order == "1" then
+		DB[Plr] = true
+	end
+end)
+
+RemoteF.OnServerInvoke = function(player)
+	if not DB[game.Players:GetPlayerFromCharacter(player.Character)] then return nil end
+	DB[game.Players:GetPlayerFromCharacter(player.Character)] = false
+
+	local Hitbox = script.Hitbox:Clone()
+	Hitbox.Name = "HollowPurple_Hitbox"
+	Hitbox.Parent = player.Character
+	Hitbox.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, -8)
+
+	spawn(function()
+		local loopDelay = .05
+		local Count = 0
+		
+		local function Damage()
+			local offset = os.clock() / loopDelay % 1 * loopDelay
+			Hitbox.CFrame = Hitbox.CFrame * CFrame.new(0, 0, -7)
+			Count += 1
+			
+			local connection = Hitbox.Touched:Connect(function() end)
+			local results = Hitbox:GetTouchingParts()
+
+			for i = 1, #results do
+				local inst = results[i]
+				if not inst:IsDescendantOf(player.Character) then
+					local enemyHum = inst.Parent:FindFirstChild("Humanoid")
+					local enemyRP = inst.Parent:FindFirstChild("HumanoidRootPart")
+
+					if enemyHum and enemyRP and enemyHum.Health > 0 then
+						enemyHum:TakeDamage(9999999)
+					end
+				end
+			end
+			
+			if Count >= 100 then
+				Hitbox:Destroy()
+				return
+			end
+			
+			task.delay(loopDelay - offset, Damage)
+		end
+		
+		Damage()
+	end)
+
+	local Obj = Instance.new("ObjectValue")
+	Obj.Parent = workspace
+	Obj.Value = Hitbox
+	game.Debris:AddTag(Obj, 10)
+
+	for _, PLR in pairs(game:GetService("Players"):GetPlayers()) do
+		if PLR ~= player then
+			RemoteF:InvokeClient(PLR, Obj)
+		end
+	end
+
+	return Obj
+end
