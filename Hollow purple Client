@@ -1,0 +1,835 @@
+local TS = game:GetService("TweenService")
+local rp = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local Debris = game:GetService("Debris")
+
+local cooldown = 60
+local debounce = false
+
+local function multNumberSequence(sequence,Scale)
+	local numberKeypoints2 = {}
+	for i = 1, #sequence.Keypoints do
+		local currKeypoint = sequence.Keypoints[i]
+		table.insert(numberKeypoints2, NumberSequenceKeypoint.new(currKeypoint.Time,currKeypoint.Value*Scale))
+	end
+	return NumberSequence.new(numberKeypoints2)
+end
+
+local tool = script.Parent
+local Event = game.ReplicatedStorage:WaitForChild("Remotes").Gojo.Event
+
+local DebrisModule = require(rp.Assets.Modules.DebrisModule)
+
+local AssetsFolder = rp:WaitForChild("Assets")
+local AnimsTrack = {}
+
+tool.Activated:Connect(function()
+	local player = game.Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humRP = character:WaitForChild("HumanoidRootPart")
+	local humanoid : Humanoid = character:WaitForChild("Humanoid")
+
+	local Animator = humanoid:WaitForChild("Animator")
+	if #AnimsTrack <= 4 then
+		for _, anim in pairs(script:GetChildren()) do
+			if anim:IsA("Animation") then
+				AnimsTrack[anim] = Animator:LoadAnimation(anim)
+			end
+		end
+	end
+
+	--// Debounce
+	if debounce then return end
+	debounce = true
+	
+	humanoid.AutoRotate = false
+	humRP.Anchored = true
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+
+	local AnimCo1
+	AnimsTrack[script["1"]]:Play()
+	AnimCo1 = AnimsTrack[script["1"]].Stopped:Connect(function()
+		AnimCo1:Disconnect()
+		AnimCo1 = nil
+
+		local StartSound = script.Start:Clone()
+		StartSound.Parent = humRP
+		StartSound:Play()
+		Debris:AddItem(StartSound, 15)
+		
+		AnimsTrack[script["2"]]:Play()
+
+		Event:FireServer("1")
+		
+		_G["ShakeCamera"].ShakeCamera(5, 15, .1, .1)
+		
+		local ColorCorr = game.Lighting.ColorCorrection
+		local ColorT_Info = TweenInfo.new(.1, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut)
+
+		TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+		TS:Create(ColorCorr, ColorT_Info, {TintColor = Color3.fromRGB(255, 0, 0)}):Play()
+		TS:Create(ColorCorr, ColorT_Info, {Saturation = 15}):Play()
+		
+		spawn(function()
+			task.wait(.05)
+
+			TS:Create(ColorCorr, ColorT_Info, {Brightness = -5}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Contrast = 15}):Play()
+		end)
+
+		local Model = AssetsFolder.Gojo["Blue&Red"]:Clone()
+		Model.Parent = workspace.PlayerVFX
+		Model.Name = "Hollow Purple"
+		Model:SetPrimaryPartCFrame(humRP.CFrame)
+		Debris:AddItem(Model, 15)
+
+		local red = Model.red
+		local blue = Model.blue
+		local purple = Model.HollowPurple
+
+		local WindEff1 = AssetsFolder.Gojo.RightArm.WindEffects1:Clone()
+		WindEff1.Parent = humRP
+		Debris:AddItem(WindEff1, 10)
+
+		for _, particle in pairs(WindEff1:GetChildren()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+
+		local RedLighting = red.PointLight
+		local BlueLighting = blue.PointLight
+		local Lighting_Info = TweenInfo.new(.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+
+		TS:Create(RedLighting, Lighting_Info, {Range = 10.5}):Play()
+		for _, particle in pairs(red.Attachment:GetDescendants()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+		
+		spawn(function()
+			task.wait(.05)
+
+			TS:Create(ColorCorr, ColorT_Info, {Brightness = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+		end)	
+		
+
+		_G["ShakeCamera"].ShakeCamera(5, 15, .1, .1)
+
+		TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+		TS:Create(ColorCorr, ColorT_Info, {Contrast = 5}):Play()
+		TS:Create(ColorCorr, ColorT_Info, {Saturation = 1}):Play()
+		TS:Create(ColorCorr, ColorT_Info, {TintColor = Color3.fromRGB(0, 136, 237)}):Play()
+		
+		spawn(function()
+			task.wait(.05)
+
+			TS:Create(ColorCorr, ColorT_Info, {Brightness = -5}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Contrast = 15}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
+		end)
+
+		--// Blue Orb Particles
+		TS:Create(BlueLighting, Lighting_Info, {Range = 10.5}):Play()
+		for _, particle in pairs(blue.Attachment:GetDescendants()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+		
+		spawn(function()
+			task.wait(.05)
+
+			TS:Create(ColorCorr, ColorT_Info, {Brightness = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
+			TS:Create(ColorCorr, ColorT_Info, {TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+		end)
+
+
+		local OrbTween_Info = TweenInfo.new(2.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		TS:Create(red, OrbTween_Info, {CFrame = red.CFrame * CFrame.new(16.1, 0, 0)}):Play()
+		local OrbTween = TS:Create(blue, OrbTween_Info, {CFrame = red.CFrame * CFrame.new(16.1, 0, 0)})
+		OrbTween:Play()
+
+		local BeamTween_Info1 = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
+		local RedBeamP = red.Beam1
+		red.Attachment.Beam1_.Enabled = true
+		red.Attachment.Beam2_.Enabled = true
+		TS:Create(RedBeamP, BeamTween_Info1, {CFrame = CFrame.new(-8, 0, 0)}):Play()
+
+		local BlueBeamP = blue.Beam1
+		blue.Attachment.Beam1_.Enabled = true
+		blue.Attachment.Beam2_.Enabled = true
+		TS:Create(BlueBeamP, BeamTween_Info1, {CFrame = CFrame.new(8, 0, 0)}):Play()
+
+		spawn(function()
+			task.wait(1)
+
+			TS:Create(RedBeamP, BeamTween_Info1, {CFrame = CFrame.new(-2, 0, 0)}):Play()
+			TS:Create(BlueBeamP, BeamTween_Info1, {CFrame = CFrame.new(2, 0, 0)}):Play()
+
+			task.wait(1)
+
+			red.Attachment.Beam1_.Enabled = false
+			red.Attachment.Beam2_.Enabled = false
+
+			blue.Attachment.Beam1_.Enabled = false
+			blue.Attachment.Beam2_.Enabled = false
+		end)
+
+		local connection3
+		connection3 = OrbTween.Completed:Connect(function()
+			connection3:Disconnect()
+			connection3 = nil
+			
+			_G["ShakeCamera"].ShakeCamera(6, 15, .1, .3)
+		
+			spawn(function()
+				TS:Create(ColorCorr, TweenInfo.new(.055, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Contrast = -2}):Play()
+				task.wait(.1)
+				TS:Create(ColorCorr, TweenInfo.new(.055, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Contrast = 5}):Play()
+				task.wait(.055)
+				TS:Create(ColorCorr, TweenInfo.new(.055, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Contrast = 0}):Play()
+			end)
+		
+			for _, v in pairs(red.ClapEffect:GetChildren()) do
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+
+			for _, v in pairs(blue.ClapEffect:GetChildren()) do
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+
+			for _, v in pairs(purple:GetChildren()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+
+			for _, v in pairs(purple.Attachment:GetChildren()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+			for _, particle in pairs(red.Attachment:GetDescendants()) do
+				if particle:IsA("ParticleEmitter") then
+					particle.Enabled = false
+				end
+			end
+
+			for _, particle in pairs(blue.Attachment:GetDescendants()) do
+				if particle:IsA("ParticleEmitter") then
+					particle.Enabled = false
+				end
+			end
+
+			TS:Create(BlueLighting, Lighting_Info, {Range = 0}):Play()
+			TS:Create(RedLighting, Lighting_Info, {Range = 0}):Play()
+
+			if humRP:FindFirstChild("WindEffects1") then
+				for _, particle in pairs(humRP:FindFirstChild("WindEffects1"):GetChildren()) do
+					if particle:IsA("ParticleEmitter") then
+						particle.Enabled = false
+					end
+				end
+
+				local WindEffects2 = AssetsFolder.Gojo.RightArm.WindEffects2:Clone()
+				WindEffects2.Parent = humRP
+				Debris:AddItem(WindEffects2, 10)
+
+				for _, particle in pairs(WindEffects2:GetChildren()) do
+					if particle:IsA("ParticleEmitter") then
+						particle.Enabled = true
+					end
+				end
+			end
+
+			AnimsTrack[script["2"]]:Stop()
+			AnimsTrack[script["3"]]:Play()
+
+			local AnimCo2
+			AnimCo2 = AnimsTrack[script["3"]].Stopped:Connect(function()
+				AnimCo2:Disconnect()
+				AnimCo2 = nil
+				
+				task.delay(2.05, function()
+					TS:Create(ColorCorr, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Contrast = 2}):Play()
+				end)
+
+				AnimsTrack[script["4"]]:Play()
+				task.wait(3.05)
+
+				Event:FireServer("3")
+
+				local RA = AssetsFolder.Gojo.RightArm:Clone()
+				RA.Parent = character["Right Arm"]
+				RA.CFrame = character["Right Arm"].CFrame
+				
+				local w = Instance.new("WeldConstraint")
+				w.Part0 = RA
+				w.Part1 = character["Right Arm"]
+				w.Parent = RA
+				Debris:AddItem(RA, 5)
+				
+				humanoid.AutoRotate = true
+				humRP.Anchored = false
+
+				task.delay(3.3, function()
+					AnimsTrack[script["4"]]:Stop()
+					AnimsTrack[script["5"]]:Play()
+
+					Event:FireServer("4")
+
+					StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+
+					if humRP:FindFirstChild("WindEffects2") then
+						for _, particle in pairs(humRP:FindFirstChild("WindEffects2"):GetChildren()) do
+							if particle:IsA("ParticleEmitter") then
+								particle.Enabled = false
+							end
+						end
+					end
+
+					for _, particle in pairs(RA.Attachment:GetDescendants()) do
+						if particle:IsA("ParticleEmitter") then
+							particle.Enabled = false
+
+						elseif particle:IsA("PointLight") then
+							TS:Create(particle, TweenInfo.new(.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Range = 0}):Play()
+						end
+					end
+					
+					--// Camera Shake
+					_G["ShakeCamera"].ShakeCamera(15, 15, .5, 1)
+					
+					spawn(function()
+						local hitbox = game.ReplicatedStorage.Remotes.Gojo.Function:InvokeServer("Attack")
+						if hitbox.Value then
+							--// Add hollow vfx
+							local HollowPurple = AssetsFolder.Gojo["Hollow Purple [Rework]"]:Clone()
+							HollowPurple.Parent = workspace.PlayerVFX
+							HollowPurple.CFrame = hitbox.Value.CFrame
+							Debris:AddItem(HollowPurple, 5)
+							
+							--// Rocks effects
+							local CHARACTERS = {}
+							for _, player in pairs(game.Players:GetPlayers()) do
+								CHARACTERS = player.Character
+							end
+							
+							local params = RaycastParams.new()
+							params.FilterType = Enum.RaycastFilterType.Exclude
+							params.FilterDescendantsInstances = {CHARACTERS, workspace.PlayerVFX}
+							
+							local function AddRock()
+								local OriginPos = {
+									[1] = hitbox.Value.CFrame * CFrame.new(math.random(90, 110) / 10, 6, 0),
+									[2] = hitbox.Value.CFrame * CFrame.new(-math.random(90, 110) / 10, 5, 0)
+								}
+								
+								local FloatRockRay = workspace:Raycast(hitbox.Value.Position, Vector3.new(0, -10, 0), params)
+								local random = math.random(1, 100) / 100
+								if FloatRockRay and random >= .30 then
+									DebrisModule.Rocks(CFrame.new(FloatRockRay.Position), 1, FloatRockRay.Instance.Color, FloatRockRay.Instance.Material, true)
+								end
+								
+								for i = 1, 2 do
+									local result = workspace:Raycast(OriginPos[i].Position, Vector3.new(0, -15, 0), params)
+									if result then
+										local rockEffect = Instance.new("Part")
+										rockEffect.Parent = workspace.PlayerVFX
+										rockEffect.Anchored = true
+										rockEffect.CanCollide = false
+										rockEffect.Transparency = result.Instance.Transparency
+										rockEffect.Color = result.Instance.Color
+										rockEffect.Material = result.Instance.Material
+										rockEffect.Name = "RockEffect"
+										rockEffect.CanQuery = false
+										
+										local RN = Random.new()
+										local Size = RN:NextNumber(3, 10)
+										rockEffect.Size = Vector3.new(
+											Size, Size * .5, Size * 2
+										)
+										
+										rockEffect.Position = result.Position - Vector3.new(0, 5, 0)
+										rockEffect.CFrame *= CFrame.Angles(math.rad(math.random(10, 45)), math.rad(math.random(0, 360)), math.rad(math.random(0, 360)))
+										
+										TS:Create(rockEffect,
+											TweenInfo.new(.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+											{Position = rockEffect.Position + Vector3.new(0, 3, 0)}
+										):Play()
+										
+										task.delay(10, function()
+											TS:Create(
+												rockEffect,
+												TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+												{Position = rockEffect.Position - Vector3.new(0, 6, 0)}
+											):Play()
+										end)
+										
+										Debris:AddItem(rockEffect, 15)
+									end
+								end
+							end
+							
+							--// Loop
+							spawn(function()
+								local last = nil
+								while HollowPurple.Parent ~= nil and hitbox.Value.Parent ~= nil do
+									task.wait()
+									TS:Create(HollowPurple,
+										TweenInfo.new(.055, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+										{CFrame = hitbox.Value.CFrame}
+									):Play()
+									
+									if last == hitbox.Value.CFrame then
+										AddRock()
+									else
+										last = hitbox.Value.CFrame
+									end
+								end
+							end)
+						end
+					end)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.055)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = -2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = -5}):Play()
+					task.wait(.055)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = -1}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.055)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 3}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.055)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
+				end)
+			end)
+			task.delay(3, function(
+				red.Attachment:Destroy()
+				blue.Attachment:Destroy()
+
+				TS:Create(RedLighting, Lighting_Info, {Range = 0}):Play()
+				TS:Create(BlueLighting, Lighting_Info, {Range = 0}):Play()
+
+				Model:Destroy()
+			end)
+		end)
+
+		task.wait(1.85)
+
+		--// Orb Size
+		local Size_Multiplier = Instance.new("NumberValue")
+		Size_Multiplier.Value = 1
+
+		local connection2
+		connection2 = Size_Multiplier.Changed:Connect(function()
+			if not blue:FindFirstChild("Attachment") then return end
+			if not red:FindFirstChild("Attachment") then return end
+
+			for _, v in pairs(blue.Attachment:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					local Seq = v.Size
+					v.Size = multNumberSequence(Seq, Size_Multiplier.Value)
+
+				elseif v:IsA("Beam") then
+					v.Width0 *= Size_Multiplier.Value
+					v.Width1 *= Size_Multiplier.Value
+				end
+			end
+
+			for _, v in pairs(red.Attachment:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					local Seq = v.Size
+					v.Size = multNumberSequence(Seq, Size_Multiplier.Value)
+
+				elseif v:IsA("Beam") then
+					v.Width0 *= Size_Multiplier.Value
+					v.Width1 *= Size_Multiplier.Value
+				end
+			end
+		end)
+
+		local Size_Mult_Tween = TS:Create(Size_Multiplier, TweenInfo.new(.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Value = 0})
+		Size_Mult_Tween:Play()
+
+		--// Disconnect connections
+		local connection3
+		connection3 = Size_Mult_Tween.Completed:Connect(function()
+			connection2:Disconnect()
+			connection2 = nil
+
+			connection3:Disconnect()
+			connection3 = nil
+		end)
+	end)
+
+	task.wait(cooldown)
+	debounce = false
+end)
+
+game.ReplicatedStorage.Remotes.Gojo.Function.OnClientInvoke = function(Hitbox)
+	task.wait()
+	if Hitbox.Value then
+		local HollowPurple = AssetsFolder.Gojo["Hollow Purple [Rework]"]:Clone()
+		HollowPurple.Parent = workspace.PlayerVFX
+		HollowPurple.CFrame = Hitbox.Value.CFrame
+		Debris:AddItem(HollowPurple, 5)
+
+		local CHARACTERS = {}
+		for _, player in pairs(game.Players:GetPlayers()) do
+			CHARACTERS = player.Character
+		end
+
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = {CHARACTERS, workspace.PlayerVFX}
+
+		local function AddRock()
+			local OriginPos = {
+				[1] = Hitbox.Value.CFrame * CFrame.new(math.random(90, 110) / 10, 6, 0),
+				[2] = Hitbox.Value.CFrame * CFrame.new(-math.random(90, 110) / 10, 5, 0)
+			}
+
+			local FloatRockRay = workspace:Raycast(Hitbox.Value.Position, Vector3.new(0, -10, 0), params)
+			local random = math.random(1, 100) / 100
+			if FloatRockRay and random >= .30 then
+				DebrisModule.Rocks(CFrame.new(FloatRockRay.Position), 1, FloatRockRay.Instance.Color, FloatRockRay.Instance.Material, true)
+			end
+
+			for i = 1, 2 do
+				local result = workspace:Raycast(OriginPos[i].Position, Vector3.new(0, -15, 0), params)
+				if result then
+					local rockEffect = Instance.new("Part")
+					rockEffect.Parent = workspace.PlayerVFX
+					rockEffect.Anchored = true
+					rockEffect.CanCollide = false
+					rockEffect.Transparency = result.Instance.Transparency
+					rockEffect.Color = result.Instance.Color
+					rockEffect.Material = result.Instance.Material
+					rockEffect.Name = "RockEffect"
+					rockEffect.CanQuery = false
+
+					local RN = Random.new()
+					local Size = RN:NextNumber(3, 10)
+					rockEffect.Size = Vector3.new(
+						Size, Size * .5, Size * 2
+					)
+
+					rockEffect.Position = result.Position - Vector3.new(0, 5, 0)
+					rockEffect.CFrame *= CFrame.Angles(math.rad(math.random(10, 45)), math.rad(math.random(0, 360)), math.rad(math.random(0, 360)))
+
+					TS:Create(rockEffect,
+						TweenInfo.new(.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+						{Position = rockEffect.Position + Vector3.new(0, 3, 0)}
+					):Play()
+
+					task.delay(10, function()
+						TS:Create(
+							rockEffect,
+							TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+							{Position = rockEffect.Position - Vector3.new(0, 6, 0)}
+						):Play()
+					end)
+
+					Debris:AddItem(rockEffect, 15)
+				end
+			end
+		end
+
+		spawn(function()
+			local last = nil
+			while HollowPurple.Parent ~= nil and Hitbox.Value.Parent ~= nil do
+				task.wait()
+				TS:Create(HollowPurple,
+					TweenInfo.new(.055, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+					{CFrame = Hitbox.Value.CFrame}
+				):Play()
+
+				if last == Hitbox.Value.CFrame then
+					AddRock()
+				else
+					last = Hitbox.Value.CFrame
+				end
+			end
+		end)
+	end
+end
+
+Event.OnClientEvent:Connect(function(Order, OriginalChar)
+	local humRP = OriginalChar.HumanoidRootPart
+	if Order == "1" then
+		local StartSound = script.Start:Clone()
+		StartSound.Parent = humRP
+		StartSound:Play()
+		Debris:AddItem(StartSound, 15)
+		
+		local Model = AssetsFolder.Gojo["Blue&Red"]:Clone()
+		Model.Parent = workspace.PlayerVFX
+		Model.Name = "Hollow Purple"
+		Model:SetPrimaryPartCFrame(humRP.CFrame)
+
+		local red = Model.red
+		local blue = Model.blue
+		local purple = Model.HollowPurple
+		local WindEff1 = AssetsFolder.Gojo.RightArm.WindEffects1:Clone()
+		WindEff1.Parent = humRP
+		Debris:AddItem(WindEff1, 10)
+
+		for _, particle in pairs(WindEff1:GetChildren()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+
+		if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude <= 15 then
+			_G["ShakeCamera"].ShakeCamera(5, 15 - (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude, .1, .1)
+		end
+
+		local RedLighting = red.PointLight
+		local BlueLighting = blue.PointLight
+		local Lighting_Info = TweenInfo.new(.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+
+		TS:Create(RedLighting, Lighting_Info, {Range = 10.5}):Play()
+		for _, particle in pairs(red.Attachment:GetDescendants()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+
+
+		if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude <= 15 then
+			_G["ShakeCamera"].ShakeCamera(5, 15 - (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude, .1, .1)
+		end
+
+		TS:Create(BlueLighting, Lighting_Info, {Range = 10.5}):Play()
+		for _, particle in pairs(blue.Attachment:GetDescendants()) do
+			if particle:IsA("ParticleEmitter") then
+				particle.Enabled = true
+			end
+		end
+
+
+		local OrbTween_Info = TweenInfo.new(2.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		TS:Create(red, OrbTween_Info, {CFrame = red.CFrame * CFrame.new(16.1, 0, 0)}):Play()
+		local OrbTween = TS:Create(blue, OrbTween_Info, {CFrame = red.CFrame * CFrame.new(16.1, 0, 0)})
+		OrbTween:Play()
+
+		local BeamTween_Info1 = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
+		local RedBeamP = red.Beam1
+		red.Attachment.Beam1_.Enabled = true
+		red.Attachment.Beam2_.Enabled = true
+		TS:Create(RedBeamP, BeamTween_Info1, {CFrame = CFrame.new(-8, 0, 0)}):Play()
+
+		local BlueBeamP = blue.Beam1
+		blue.Attachment.Beam1_.Enabled = true
+		blue.Attachment.Beam2_.Enabled = true
+		TS:Create(BlueBeamP, BeamTween_Info1, {CFrame = CFrame.new(8, 0, 0)}):Play()
+
+		spawn(function()
+			task.wait(1)
+
+			TS:Create(RedBeamP, BeamTween_Info1, {CFrame = CFrame.new(-2, 0, 0)}):Play()
+			TS:Create(BlueBeamP, BeamTween_Info1, {CFrame = CFrame.new(2, 0, 0)}):Play()
+
+			task.wait(1)
+
+			red.Attachment.Beam1_.Enabled = false
+			red.Attachment.Beam2_.Enabled = false
+
+			blue.Attachment.Beam1_.Enabled = false
+			blue.Attachment.Beam2_.Enabled = false
+		end)
+
+		local connection3
+		connection3 = OrbTween.Completed:Connect(function(
+			connection3:Disconnect()
+			connection3 = nil
+
+			if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude <= 15 then
+				_G["ShakeCamera"].ShakeCamera(6, 15 - (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude, .1, .3)
+			end
+
+			for _, v in pairs(red.ClapEffect:GetChildren()) do
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+
+			for _, v in pairs(blue.ClapEffect:GetChildren()) do
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+
+			for _, v in pairs(purple:GetChildren()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+
+			for _, v in pairs(purple.Attachment:GetChildren()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+
+			for _, particle in pairs(red.Attachment:GetDescendants()) do
+				if particle:IsA("ParticleEmitter") then
+					particle.Enabled = false
+				end
+			end
+
+			for _, particle in pairs(blue.Attachment:GetDescendants()) do
+				if particle:IsA("ParticleEmitter") then
+					particle.Enabled = false
+				end
+			end
+
+			TS:Create(BlueLighting, Lighting_Info, {Range = 0}):Play()
+			TS:Create(RedLighting, Lighting_Info, {Range = 0}):Play()
+
+			if humRP:FindFirstChild("WindEffects1") then
+				for _, particle in pairs(humRP:FindFirstChild("WindEffects1"):GetChildren()) do
+					if particle:IsA("ParticleEmitter") then
+						particle.Enabled = false
+					end
+				end
+
+				local WindEffects2 = AssetsFolder.Gojo.RightArm.WindEffects2:Clone()
+				WindEffects2.Parent = humRP
+				Debris:AddItem(WindEffects2, 10)
+
+				for _, particle in pairs(WindEffects2:GetChildren()) do
+					if particle:IsA("ParticleEmitter") then
+						particle.Enabled = true
+					end
+				end
+			end
+		end)
+
+		task.wait(1.85)
+
+		local Size_Multiplier = Instance.new("NumberValue")
+		Size_Multiplier.Value = 1
+
+		local connection2
+		connection2 = Size_Multiplier.Changed:Connect(function()
+			if not blue:FindFirstChild("Attachment") then return end
+			if not red:FindFirstChild("Attachment") then return end
+
+			for _, v in pairs(blue.Attachment:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					local Seq = v.Size
+					v.Size = multNumberSequence(Seq, Size_Multiplier.Value)
+
+				elseif v:IsA("Beam") then
+					v.Width0 *= Size_Multiplier.Value
+					v.Width1 *= Size_Multiplier.Value
+				end
+			end
+
+			for _, v in pairs(red.Attachment:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					local Seq = v.Size
+					v.Size = multNumberSequence(Seq, Size_Multiplier.Value)
+
+				elseif v:IsA("Beam") then
+					v.Width0 *= Size_Multiplier.Value
+					v.Width1 *= Size_Multiplier.Value
+				end
+			end
+		end)
+
+		local Size_Mult_Tween = TS:Create(Size_Multiplier, TweenInfo.new(.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Value = 0})
+		Size_Mult_Tween:Play()
+
+		local connection3
+		connection3 = Size_Mult_Tween.Completed:Connect(function()
+			connection2:Disconnect()
+			connection2 = nil
+
+			connection3:Disconnect()
+			connection3 = nil
+		end)
+
+	elseif Order == "3" then
+		local ColorCorr = game.Lighting.ColorCorrection
+		local ColorT_Info = TweenInfo.new(.1, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut)
+
+		--// VFX
+		local RA = AssetsFolder.Gojo.RightArm:Clone()
+		RA.Parent = OriginalChar["Right Arm"]
+		RA.CFrame = OriginalChar["Right Arm"].CFrame
+
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = RA
+		w.Part1 = OriginalChar["Right Arm"]
+		w.Parent = RA
+		Debris:AddItem(RA, 5)
+
+		task.delay(3.3, function()
+			if humRP:FindFirstChild("WindEffects2") then
+				for _, particle in pairs(humRP:FindFirstChild("WindEffects2"):GetDescendants()) do
+					if particle:IsA("ParticleEmitter") then
+						particle.Enabled = false
+					end
+				end
+			end
+
+			for _, particle in pairs(RA.Attachment:GetDescendants()) do
+				if particle:IsA("ParticleEmitter") then
+					particle.Enabled = false
+
+				elseif particle:IsA("PointLight") then
+					TS:Create(particle, TweenInfo.new(.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Range = 0}):Play()
+				end
+			end
+
+			if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude <= 30 then
+				_G["ShakeCamera"].ShakeCamera(15 - (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humRP.Position).Magnitude / 2, 15, .5, 1)
+
+				spawn(function()
+					--// Impact Frame
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.1)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = -2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = -5}):Play()
+					task.wait(.1)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = -1}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.1)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 2}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 3}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 2}):Play()
+					task.wait(.1)
+
+					TS:Create(ColorCorr, ColorT_Info, {Brightness = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Contrast = 0}):Play()
+					TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
+				end)
+			end
+		end)
+	end
+end)
