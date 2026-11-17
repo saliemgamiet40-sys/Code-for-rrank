@@ -423,7 +423,7 @@ tool.Activated:Connect(function()
 					TS:Create(ColorCorr, ColorT_Info, {Saturation = 0}):Play()
 				end)
 			end)
-			task.delay(3, function(
+			task.delay(3, function()
 				red.Attachment:Destroy()
 				blue.Attachment:Destroy()
 
@@ -661,7 +661,7 @@ Event.OnClientEvent:Connect(function(Order, OriginalChar)
 		end)
 
 		local connection3
-		connection3 = OrbTween.Completed:Connect(function(
+		connection3 = OrbTween.Completed:Connect(function()
 			connection3:Disconnect()
 			connection3 = nil
 
